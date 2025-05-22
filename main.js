@@ -393,4 +393,277 @@ function ensureCreatedByColumn() {
 
 // Call migration at startup
 ensureOriginalCodeColumn();
-ensureCreatedByColumn(); 
+ensureCreatedByColumn();
+
+// Get statistics
+ipcMain.handle('get-statistics', async () => {
+    try {
+        // Get total permits
+        const totalPermits = await new Promise((resolve, reject) => {
+            db.get('SELECT COUNT(*) as count FROM students', (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        // Get active permits
+        const activePermits = await new Promise((resolve, reject) => {
+            db.get('SELECT COUNT(*) as count FROM students WHERE status = "active"', (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        // Get total students
+        const totalStudents = await new Promise((resolve, reject) => {
+            db.get('SELECT COUNT(DISTINCT student_id) as count FROM students', (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        // Get revoked permits
+        const revokedPermits = await new Promise((resolve, reject) => {
+            db.get('SELECT COUNT(*) as count FROM students WHERE status = "revoked"', (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        // Get expired permits
+        const expiredPermits = await new Promise((resolve, reject) => {
+            db.get('SELECT COUNT(*) as count FROM students WHERE status = "expired"', (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        // Get total revenue
+        const totalRevenue = await new Promise((resolve, reject) => {
+            db.get('SELECT SUM(amount_paid) as total FROM students', (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        // Get course distribution
+        const courseDistribution = await new Promise((resolve, reject) => {
+            db.all(`
+                SELECT course, COUNT(*) as count 
+                FROM students 
+                GROUP BY course 
+                ORDER BY count DESC
+            `, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+
+        return {
+            totalPermits: totalPermits.count || 0,
+            activePermits: activePermits.count || 0,
+            totalStudents: totalStudents.count || 0,
+            revokedPermits: revokedPermits.count || 0,
+            expiredPermits: expiredPermits.count || 0,
+            totalRevenue: totalRevenue.total || 0,
+            courseDistribution
+        };
+    } catch (error) {
+        console.error('Error getting statistics:', error);
+        throw error;
+    }
+});
+
+// Delete all data
+ipcMain.handle('deleteAllData', async () => {
+    try {
+        // Start a transaction
+        db.run('BEGIN TRANSACTION');
+        
+        try {
+            // Delete all permits
+            db.run('DELETE FROM permits');
+            
+            // Delete all students
+            db.run('DELETE FROM students');
+            
+            // Reset the auto-increment counters
+            db.run('DELETE FROM sqlite_sequence WHERE name IN ("permits", "students")');
+            
+            // Commit the transaction
+            db.run('COMMIT');
+            
+            return { success: true, message: 'All permits and student data have been deleted successfully.' };
+        } catch (error) {
+            // Rollback in case of error
+            db.run('ROLLBACK');
+            throw error;
+        }
+    } catch (error) {
+        console.error('Error deleting data:', error);
+        return { success: false, message: 'Error deleting data: ' + error.message };
+    }
+});
+
+// Check permit validity
+ipcMain.handle('check-permit-validity', async (event, studentId) => {
+    return new Promise((resolve, reject) => {
+        db.get('SELECT *, (julianday("now") - julianday(created_at)) as days_elapsed FROM students WHERE student_id = ?', [studentId], (err, row) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            
+            if (!row) {
+                resolve({ exists: false });
+                return;
+            }
+
+            const daysElapsed = Math.floor(row.days_elapsed);
+            const isExpired = daysElapsed > row.validity_period;
+            const daysRemaining = Math.max(0, row.validity_period - daysElapsed);
+            
+            resolve({
+                exists: true,
+                student: row,
+                daysElapsed,
+                daysRemaining,
+                isExpired,
+                status: isExpired ? 'expired' : row.status
+            });
+        });
+    });
+});
+
+// Generate receipt
+ipcMain.handle('generate-receipt', async (event, studentId) => {
+    return new Promise((resolve, reject) => {
+        db.get('SELECT s.*, u.username as creator_name FROM students s LEFT JOIN users u ON s.created_by = u.id WHERE s.student_id = ?', [studentId], (err, row) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            if (!row) {
+                reject(new Error('Student not found'));
+                return;
+            }
+
+            const receipt = {
+                receiptNumber: `REC-${Date.now()}`,
+                date: new Date().toLocaleDateString(),
+                time: new Date().toLocaleTimeString(),
+                studentId: row.student_id,
+                name: row.name,
+                course: row.course,
+                level: row.level,
+                amountPaid: row.amount_paid,
+                permitCode: row.original_code,
+                validityPeriod: row.validity_period,
+                createdBy: row.creator_name,
+                status: 'PAID'
+            };
+
+            resolve(receipt);
+        });
+    });
+});
+
+// Fetch student info
+ipcMain.handle('fetch-student-info', async (event, studentId) => {
+    return new Promise((resolve, reject) => {
+        db.get('SELECT * FROM students WHERE student_id = ?', [studentId], (err, row) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(row);
+        });
+    });
+});
+
+// Delete student
+ipcMain.handle('delete-student', async (event, studentId) => {
+    return new Promise((resolve, reject) => {
+        db.run('DELETE FROM students WHERE student_id = ?', [studentId], function(err) {
+            if (err) {
+                reject(err);
+                return;
+            }
+            logAudit('delete-student', studentId);
+            resolve({ success: true });
+        });
+    });
+});
+
+// Get recent activity
+ipcMain.handle('get-recent-activity', async () => {
+    return new Promise((resolve, reject) => {
+        db.all(`
+            SELECT * FROM audit_logs 
+            ORDER BY timestamp DESC 
+            LIMIT 10
+        `, (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(rows);
+        });
+    });
+});
+
+// Get expiring permits
+ipcMain.handle('get-expiring-permits', async () => {
+    return new Promise((resolve, reject) => {
+        db.all(`
+            SELECT * FROM students 
+            WHERE status = 'active' 
+            AND julianday(created_at) + validity_period <= julianday('now') + 7
+            AND julianday(created_at) + validity_period > julianday('now')
+            ORDER BY julianday(created_at) + validity_period ASC
+            LIMIT 5
+        `, (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(rows);
+        });
+    });
+});
+
+// Get revenue overview
+ipcMain.handle('get-revenue-overview', async () => {
+    return new Promise((resolve, reject) => {
+        const today = new Date().toISOString().split('T')[0];
+        const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+        
+        db.all(`
+            SELECT 
+                SUM(CASE WHEN date(created_at) = ? THEN amount_paid ELSE 0 END) as today_revenue,
+                SUM(CASE WHEN date(created_at) >= ? THEN amount_paid ELSE 0 END) as month_revenue,
+                date(created_at) as date,
+                SUM(amount_paid) as daily_revenue
+            FROM students 
+            WHERE date(created_at) >= date('now', '-30 days')
+            GROUP BY date(created_at)
+            ORDER BY date(created_at) ASC
+        `, [today, firstDayOfMonth], (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            
+            const result = {
+                todayRevenue: rows[0]?.today_revenue || 0,
+                monthRevenue: rows[0]?.month_revenue || 0,
+                dailyRevenue: rows.map(row => ({
+                    date: row.date,
+                    amount: row.daily_revenue
+                }))
+            };
+            
+            resolve(result);
+        });
+    });
+}); 
