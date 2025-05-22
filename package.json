@@ -1,0 +1,36 @@
+{
+  "name": "knutsford-src-permit",
+  "version": "1.0.0",
+  "description": "Knutsford University SRC Permit Management System",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "electron",
+    "permit",
+    "university",
+    "src"
+  ],
+  "author": "Knutsford University",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "csv-parser": "^3.2.0",
+    "csv-writer": "^1.6.0",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "nodemailer": "^6.9.1",
+    "qrcode": "^1.5.3",
+    "sqlite3": "^5.1.6"
+  },
+  "build": {
+    "appId": "com.knutsford.srcpermit",
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    }
+  }
+}

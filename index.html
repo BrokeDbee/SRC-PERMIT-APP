@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Knutsford University SRC Permit System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .qr-code {
+            max-width: 200px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Knutsford University SRC Permit System</h1>
+        <div id="userActions" style="display:none; margin-bottom: 20px;">
+            <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+            <button id="deleteAccountBtn" class="btn btn-danger">Delete Account</button>
+        </div>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="create-tab" data-bs-toggle="tab" href="#create" role="tab">Create Permit</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="verify-tab" data-bs-toggle="tab" href="#verify" role="tab">Verify Permit</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="revoke-tab" data-bs-toggle="tab" href="#revoke" role="tab">Revoke Permit</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="import-tab" data-bs-toggle="tab" href="#import" role="tab">Bulk Import</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="export-tab" data-bs-toggle="tab" href="#export" role="tab">Bulk Export</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="search-tab" data-bs-toggle="tab" href="#search" role="tab">Search</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="audit-tab" data-bs-toggle="tab" href="#audit" role="tab">Audit Logs</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="backup-tab" data-bs-toggle="tab" href="#backup" role="tab">Backup/Restore</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="delete-tab" data-bs-toggle="tab" href="#delete" role="tab">Delete Student</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="login-tab" data-bs-toggle="tab" href="#login" role="tab">Login</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="report-tab" data-bs-toggle="tab" href="#report" role="tab">Reports</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="bulk-tab" data-bs-toggle="tab" href="#bulk" role="tab">Bulk Operations</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="print-tab" data-bs-toggle="tab" href="#print" role="tab">Print Permits</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="signup-tab" data-bs-toggle="tab" href="#signup" role="tab">Sign Up</a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Create Permit Tab -->
+            <div class="tab-pane fade show active" id="create" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Create New Permit</h5>
+                        <form id="createPermitForm">
+                            <div class="mb-3">
+                                <label for="studentId" class="form-label">Student ID</label>
+                                <input type="text" class="form-control" id="studentId" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="course" class="form-label">Course</label>
+                                <select class="form-select" id="course" required>
+                                    <option value="">Select Course</option>
+                                    <option value="Nursing">Nursing</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="IT">IT</option>
+                                    <option value="Media">Media</option>
+                                    <option value="Business Administration">Business Administration</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="level" class="form-label">Level</label>
+                                <select class="form-select" id="level" required>
+                                    <option value="">Select Level</option>
+                                    <option value="100">100</option>
+                                    <option value="200">200</option>
+                                    <option value="300">300</option>
+                                    <option value="400">400</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="amountPaid" class="form-label">Amount Paid</label>
+                                <input type="number" class="form-control" id="amountPaid" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="number" class="form-label">Number</label>
+                                <input type="text" class="form-control" id="number" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="validityPeriod" class="form-label">Validity Period (Days)</label>
+                                <input type="number" class="form-control" id="validityPeriod" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Create Permit</button>
+                        </form>
+                        <div id="createResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verify Permit Tab -->
+            <div class="tab-pane fade" id="verify" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Verify Permit</h5>
+                        <form id="verifyPermitForm">
+                            <div class="mb-3">
+                                <label for="permitCode" class="form-label">Permit Code</label>
+                                <input type="text" class="form-control" id="permitCode" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Verify Permit</button>
+                        </form>
+                        <div id="verifyResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revoke Permit Tab -->
+            <div class="tab-pane fade" id="revoke" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Revoke Permit</h5>
+                        <form id="revokePermitForm">
+                            <div class="mb-3">
+                                <label for="revokeStudentId" class="form-label">Student ID</label>
+                                <input type="text" class="form-control" id="revokeStudentId" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Revoke Permit</button>
+                        </form>
+                        <div id="revokeResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Import Tab -->
+            <div class="tab-pane fade" id="import" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Bulk Import Students</h5>
+                        <form id="importForm">
+                            <div class="mb-3">
+                                <label for="importFile" class="form-label">CSV File</label>
+                                <input type="file" class="form-control" id="importFile" accept=".csv" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Import</button>
+                        </form>
+                        <div id="importResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Export Tab -->
+            <div class="tab-pane fade" id="export" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Bulk Export Students</h5>
+                        <form id="exportForm">
+                            <div class="mb-3">
+                                <label for="exportFile" class="form-label">Export to CSV</label>
+                                <input type="text" class="form-control" id="exportFile" placeholder="Enter file path" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Export</button>
+                        </form>
+                        <div id="exportResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Tab -->
+            <div class="tab-pane fade" id="search" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Search Students</h5>
+                        <form id="searchForm">
+                            <div class="mb-3">
+                                <label for="searchQuery" class="form-label">Search Query</label>
+                                <input type="text" class="form-control" id="searchQuery" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </form>
+                        <div id="searchResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Logs Tab -->
+            <div class="tab-pane fade" id="audit" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Audit Logs</h5>
+                        <div id="auditLogs" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backup/Restore Tab -->
+            <div class="tab-pane fade" id="backup" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Backup/Restore Database</h5>
+                        <form id="backupForm">
+                            <div class="mb-3">
+                                <label for="backupPath" class="form-label">Backup Path</label>
+                                <input type="text" class="form-control" id="backupPath" placeholder="Enter backup file path" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Backup</button>
+                        </form>
+                        <form id="restoreForm" class="mt-3">
+                            <div class="mb-3">
+                                <label for="restorePath" class="form-label">Restore Path</label>
+                                <input type="text" class="form-control" id="restorePath" placeholder="Enter restore file path" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Restore</button>
+                        </form>
+                        <div id="backupResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Student Tab -->
+            <div class="tab-pane fade" id="delete" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Delete Student</h5>
+                        <form id="deleteStudentForm">
+                            <div class="mb-3">
+                                <label for="deleteStudentId" class="form-label">Student ID</label>
+                                <input type="text" class="form-control" id="deleteStudentId" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Delete Student</button>
+                        </form>
+                        <div id="deleteResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Tab -->
+            <div class="tab-pane fade" id="login" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Login</h5>
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </form>
+                        <div id="loginResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div class="tab-pane fade" id="report" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Reports</h5>
+                        <div id="reportStats" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Operations Tab -->
+            <div class="tab-pane fade" id="bulk" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Bulk Operations</h5>
+                        <form id="bulkDeleteForm">
+                            <div class="mb-3">
+                                <label for="studentIds" class="form-label">Student IDs (comma-separated)</label>
+                                <input type="text" class="form-control" id="studentIds" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Bulk Delete</button>
+                        </form>
+                        <div id="bulkResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Print Permits Tab -->
+            <div class="tab-pane fade" id="print" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Print Permits</h5>
+                        <form id="printPermitForm">
+                            <div class="mb-3">
+                                <label for="printStudentId" class="form-label">Student ID</label>
+                                <input type="text" class="form-control" id="printStudentId" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Print Permit</button>
+                        </form>
+                        <div id="printResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sign Up Tab -->
+            <div class="tab-pane fade" id="signup" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Sign Up</h5>
+                        <form id="signupForm">
+                            <div class="mb-3">
+                                <label for="signupUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="signupUsername" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="signupPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="signupPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="signupRole" class="form-label">Role</label>
+                                <select class="form-select" id="signupRole" required>
+                                    <option value="">Select Role</option>
+                                    <option value="src_president">SRC President</option>
+                                    <option value="src_vice">SRC Vice President</option>
+                                    <option value="treasurer">Treasurer</option>
+                                    <option value="external_affairs">External Affairs</option>
+                                    <option value="internal_affairs">Internal Affairs</option>
+                                    <option value="pro">PRO</option>
+                                    <option value="deputy_pro">Deputy PRO</option>
+                                    <option value="organizer">Organizer</option>
+                                    <option value="deputy_organizer">Deputy Organizer</option>
+                                    <option value="womens_commissioner">Women's Commissioner</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Sign Up</button>
+                        </form>
+                        <div id="signupResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html> 
