@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permit Verification - Knutsford University SRC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .verification-card {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 2rem;
+        }
+        .status-badge {
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+        }
+        .detail-row {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .verification-date {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="verification-card">
+            <div class="text-center">
+                <img src="assets/knutsford_logo.png" alt="Knutsford University Logo" class="logo">
+                <h2 class="mb-4">Permit Verification</h2>
+            </div>
+
+            <div id="loading" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Verifying permit...</p>
+            </div>
+
+            <div id="error" class="alert alert-danger" style="display: none;">
+                <h4>Invalid Permit</h4>
+                <p id="error-message"></p>
+            </div>
+
+            <div id="permit-details" style="display: none;">
+                <div class="text-center mb-4">
+                    <span id="status-badge" class="badge status-badge"></span>
+                </div>
+
+                <div class="details-container">
+                    <div class="detail-row">
+                        <div class="detail-label">Student ID</div>
+                        <div id="student-id"></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Name</div>
+                        <div id="student-name"></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Course</div>
+                        <div id="course"></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Level</div>
+                        <div id="level"></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Email</div>
+                        <div id="email"></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Phone</div>
+                        <div id="phone"></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Amount Paid</div>
+                        <div id="amount-paid"></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Validity Period</div>
+                        <div id="validity-period"></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Created Date</div>
+                        <div id="created-date"></div>
+                    </div>
+                </div>
+
+                <div class="verification-date text-center">
+                    Verified on: <span id="verification-date"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const permitCode = urlParams.get('code');
+
+            if (!permitCode) {
+                showError('No permit code provided');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/verify-permit?code=${permitCode}`);
+                const data = await response.json();
+
+                if (data.valid) {
+                    showPermitDetails(data.student);
+                } else {
+                    showError('Invalid or expired permit');
+                }
+            } catch (error) {
+                showError('Error verifying permit');
+                console.error('Verification error:', error);
+            }
+        });
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+        }
+
+        function showPermitDetails(student) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('permit-details').style.display = 'block';
+
+            // Set status badge
+            const statusBadge = document.getElementById('status-badge');
+            statusBadge.textContent = student.status.toUpperCase();
+            statusBadge.className = `badge status-badge ${
+                student.status === 'active' ? 'bg-success' :
+                student.status === 'revoked' ? 'bg-danger' :
+                student.status === 'expired' ? 'bg-warning' : 'bg-secondary'
+            }`;
+
+            // Fill in student details
+            document.getElementById('student-id').textContent = student.student_id;
+            document.getElementById('student-name').textContent = student.name;
+            document.getElementById('course').textContent = student.course;
+            document.getElementById('level').textContent = student.level;
+            document.getElementById('email').textContent = student.email;
+            document.getElementById('phone').textContent = student.number;
+            document.getElementById('amount-paid').textContent = `GHS ${student.amount_paid}`;
+            document.getElementById('validity-period').textContent = `${student.validity_period} days`;
+            document.getElementById('created-date').textContent = new Date(student.created_at).toLocaleDateString();
+            document.getElementById('verification-date').textContent = new Date().toLocaleString();
+        }
+    </script>
+</body>
+</html> 

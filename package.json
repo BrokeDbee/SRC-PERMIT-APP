@@ -11,10 +11,12 @@
   "author": "BrokeDbee",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.5",
     "bcryptjs": "^2.4.3",
     "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
     "electron-store": "^8.1.0",
+    "express": "^5.1.0",
     "nodemailer": "^6.9.9",
     "qrcode": "^1.5.3",
     "sqlite3": "^5.0.2"
@@ -37,7 +39,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "icon.ico"

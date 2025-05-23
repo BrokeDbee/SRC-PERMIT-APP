@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app: electronApp, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
@@ -7,6 +7,11 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const { createObjectCsvWriter } = require('csv-writer');
 const nodemailer = require('nodemailer');
+const { sendEmail } = require('./email-service');
+const express = require('express');
+const app = express();
+const server = require('http').createServer(app);
+const port = 3000;
 
 let mainWindow;
 // Update database path to a separate folder
@@ -36,7 +41,8 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password TEXT,
-    role TEXT
+    role TEXT,
+    email TEXT
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS audit_logs (
@@ -46,6 +52,38 @@ db.serialize(() => {
     details TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS recovery_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    token TEXT UNIQUE,
+    expires DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+});
+
+// Express setup
+app.use(express.static(path.join(__dirname)));
+app.use(express.json());
+
+// Add verification endpoint
+app.get('/verify-permit', async (req, res) => {
+    const permitCode = req.query.code;
+    if (!permitCode) {
+        return res.json({ valid: false, error: 'No permit code provided' });
+    }
+
+    try {
+        const result = await verifyPermit(permitCode);
+        res.json(result);
+    } catch (error) {
+        res.json({ valid: false, error: error.message });
+    }
+});
+
+// Start the server
+server.listen(port, () => {
+    console.log(`Verification server running at http://localhost:${port}`);
 });
 
 function createWindow() {
@@ -62,15 +100,15 @@ function createWindow() {
   // mainWindow.webContents.openDevTools(); // Uncomment for development
 }
 
-app.whenReady().then(createWindow);
+electronApp.whenReady().then(createWindow);
 
-app.on('window-all-closed', () => {
+electronApp.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    electronApp.quit();
   }
 });
 
-app.on('activate', () => {
+electronApp.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
@@ -90,8 +128,10 @@ ipcMain.handle('create-permit', async (event, studentData) => {
           reject(err);
           return;
         }
-        // Generate QR Code
-        const qrCode = await QRCode.toDataURL(permitCode);
+        // Generate QR Code with verification URL
+        const verificationUrl = `http://localhost:${port}/verify.html?code=${permitCode}`;
+        const qrCode = await QRCode.toDataURL(verificationUrl);
+        
         // Log the action with creator info
         db.get('SELECT username FROM users WHERE id = ?', [studentData.createdBy], (err, user) => {
           if (err) {
@@ -106,7 +146,7 @@ ipcMain.handle('create-permit', async (event, studentData) => {
   });
 });
 
-ipcMain.handle('verify-permit', async (event, permitCode) => {
+async function verifyPermit(permitCode) {
   return new Promise((resolve, reject) => {
     db.all('SELECT * FROM students WHERE status = "active"', [], async (err, rows) => {
       if (err) {
@@ -126,7 +166,7 @@ ipcMain.handle('verify-permit', async (event, permitCode) => {
       resolve({ valid: false });
     });
   });
-});
+}
 
 ipcMain.handle('revoke-permit', async (event, studentId) => {
   return new Promise((resolve, reject) => {
@@ -302,7 +342,33 @@ ipcMain.handle('restore-database', async (event, backupPath) => {
 // Search and Filter Enhancements
 ipcMain.handle('search-students', async (event, query) => {
   return new Promise((resolve, reject) => {
-    db.all('SELECT s.student_id, s.name, s.email, s.course, s.level, s.number, s.amount_paid, s.status, s.original_code, u.username as creator FROM students s LEFT JOIN users u ON s.created_by = u.id WHERE s.student_id LIKE ? OR s.name LIKE ? OR s.email LIKE ? OR s.course LIKE ? OR s.level LIKE ?', [`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`], (err, rows) => {
+    db.all(`
+      SELECT 
+        s.student_id, 
+        s.name, 
+        s.email, 
+        s.course, 
+        s.level, 
+        s.number, 
+        s.amount_paid, 
+        s.status, 
+        s.original_code, 
+        s.validity_period,
+        s.created_at,
+        u.username as creator 
+      FROM students s 
+      LEFT JOIN users u ON s.created_by = u.id 
+      WHERE 
+        s.student_id LIKE ? OR 
+        s.name LIKE ? OR 
+        s.email LIKE ? OR 
+        s.course LIKE ? OR 
+        s.level LIKE ? OR
+        s.number LIKE ?
+      ORDER BY s.created_at DESC
+    `, 
+    [`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`], 
+    (err, rows) => {
       if (err) {
         reject(err);
         return;
@@ -666,4 +732,61 @@ ipcMain.handle('get-revenue-overview', async () => {
             resolve(result);
         });
     });
+});
+
+// Add these new IPC handlers
+ipcMain.handle('validate-user', async (event, { username, email, role }) => {
+    return new Promise((resolve, reject) => {
+        db.get('SELECT * FROM users WHERE username = ? AND email = ? AND role = ?', 
+            [username, email, role], 
+            (err, row) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve({ exists: !!row });
+            }
+        );
+    });
+});
+
+ipcMain.handle('store-recovery-token', async (event, { username, token }) => {
+    return new Promise((resolve, reject) => {
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+        db.run('INSERT INTO recovery_tokens (username, token, expires) VALUES (?, ?, ?)',
+            [username, token, expires.toISOString()],
+            function(err) {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve({ success: true });
+            }
+        );
+    });
+});
+
+// Add this with your other IPC handlers
+ipcMain.handle('send-recovery-email', async (event, emailData) => {
+    try {
+        const result = await sendEmail(emailData);
+        return result;
+    } catch (error) {
+        console.error('Error in send-recovery-email handler:', error);
+        return { 
+            success: false, 
+            error: error.message 
+        };
+    }
+});
+
+// Add IPC handler for sending permit emails
+ipcMain.handle('send-permit-email', async (event, emailData) => {
+    try {
+        const result = await sendEmail(emailData);
+        return result;
+    } catch (error) {
+        console.error('Error sending permit email:', error);
+        throw error;
+    }
 }); 

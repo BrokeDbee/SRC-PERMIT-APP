@@ -402,6 +402,9 @@
             <li class="nav-item">
                 <a class="nav-link" id="signup-tab" data-bs-toggle="tab" href="#signup" role="tab">Sign Up</a>
             </li>
+            <li class="nav-item" style="display: none;">
+                <a class="nav-link" id="recover-tab" data-bs-toggle="tab" href="#recover" role="tab">Recover Password</a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab">Statistics</a>
             </li>
@@ -796,6 +799,46 @@
                             <button type="submit" class="btn btn-primary">Sign Up</button>
                         </form>
                         <div id="signupResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recover Password Tab -->
+            <div class="tab-pane fade" id="recover" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Recover Password</h5>
+                        <form id="recoverPasswordForm">
+                            <div class="mb-3">
+                                <label for="recoverEmail" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="recoverEmail" required>
+                                <div class="form-text">Enter the email address associated with your account.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="recoverUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="recoverUsername" required>
+                                <div class="form-text">Enter your username to verify your identity.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="recoverRole" class="form-label">Role</label>
+                                <select class="form-select" id="recoverRole" required>
+                                    <option value="">Select Role</option>
+                                    <option value="src_president">SRC President</option>
+                                    <option value="src_vice">SRC Vice President</option>
+                                    <option value="treasurer">Treasurer</option>
+                                    <option value="external_affairs">External Affairs</option>
+                                    <option value="internal_affairs">Internal Affairs</option>
+                                    <option value="pro">PRO</option>
+                                    <option value="deputy_pro">Deputy PRO</option>
+                                    <option value="organizer">Organizer</option>
+                                    <option value="deputy_organizer">Deputy Organizer</option>
+                                    <option value="womens_commissioner">Women's Commissioner</option>
+                                </select>
+                                <div class="form-text">Select your role to verify your identity.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send Recovery Link</button>
+                        </form>
+                        <div id="recoverResult" class="mt-3"></div>
                     </div>
                 </div>
             </div>

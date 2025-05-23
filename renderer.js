@@ -118,6 +118,170 @@ document.getElementById('createPermitForm').addEventListener('submit', async (e)
             // Generate receipt
             const receipt = await ipcRenderer.invoke('generate-receipt', studentData.studentId);
             
+            // Send permit details email
+            await ipcRenderer.invoke('send-permit-email', {
+                to: studentData.email,
+                subject: 'Knutsford University SRC - Your Permit Details',
+                text: `Dear ${studentData.name},\n\nYour SRC permit has been created successfully.\n\nPermit Code: ${result.permitCode}\nStudent ID: ${studentData.studentId}\nCourse: ${studentData.course}\nLevel: ${studentData.level}\nAmount Paid: GHS ${studentData.amountPaid}\nValidity Period: ${studentData.validityPeriod} days\n\nPlease keep this information safe.\n\nBest regards,\nKnutsford University SRC Team`,
+                html: `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Permit Details</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <img src="${window.location.origin}/assets/knutsford_logo.png" alt="Knutsford University Logo" style="max-width: 200px; height: auto;">
+                        </div>
+                        
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+                            <h2 style="color: #0d6efd; margin-top: 0;">Permit Created Successfully</h2>
+                            
+                            <p>Dear ${studentData.name},</p>
+                            
+                            <p>Your SRC permit has been created successfully. Please find your permit details below:</p>
+                            
+                            <div style="background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Permit Code:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${result.permitCode}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Student ID:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${studentData.studentId}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Course:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${studentData.course}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Level:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${studentData.level}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Amount Paid:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">GHS ${studentData.amountPaid}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Validity Period:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${studentData.validityPeriod} days</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div style="text-align: center; margin: 30px 0;">
+                                <img src="${result.qrCode}" alt="Permit QR Code" style="max-width: 200px; height: auto;">
+                            </div>
+                            
+                            <p style="color: #666; font-size: 14px;">Please keep this information safe and present your permit code when required.</p>
+                        </div>
+                        
+                        <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px; font-size: 14px; color: #666;">
+                            <p style="margin: 0;">Best regards,<br>Knutsford University SRC Team</p>
+                        </div>
+                        
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+                            <p>This is an automated message, please do not reply to this email.</p>
+                            <p>© ${new Date().getFullYear()} Knutsford University SRC. All rights reserved.</p>
+                        </div>
+                    </body>
+                    </html>
+                `
+            });
+
+            // Send receipt email
+            await ipcRenderer.invoke('send-permit-email', {
+                to: studentData.email,
+                subject: 'Knutsford University SRC - Payment Receipt',
+                text: `Dear ${studentData.name},\n\nThank you for your payment. Please find your receipt details below:\n\nReceipt No: ${receipt.receiptNumber}\nDate: ${receipt.date}\nTime: ${receipt.time}\nStudent ID: ${receipt.studentId}\nName: ${receipt.name}\nCourse: ${receipt.course}\nLevel: ${receipt.level}\nAmount Paid: GHS ${receipt.amountPaid}\nPermit Code: ${receipt.permitCode}\nValidity Period: ${receipt.validityPeriod} days\nStatus: ${receipt.status}\n\nBest regards,\nKnutsford University SRC Team`,
+                html: `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Payment Receipt</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <img src="${window.location.origin}/assets/knutsford_logo.png" alt="Knutsford University Logo" style="max-width: 200px; height: auto;">
+                        </div>
+                        
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+                            <h2 style="color: #0d6efd; margin-top: 0;">Payment Receipt</h2>
+                            
+                            <p>Dear ${studentData.name},</p>
+                            
+                            <p>Thank you for your payment. Please find your receipt details below:</p>
+                            
+                            <div style="background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Receipt No:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.receiptNumber}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Date:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.date}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Time:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.time}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Student ID:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.studentId}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Name:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.name}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Course:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.course}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Level:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.level}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Amount Paid:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">GHS ${receipt.amountPaid}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Permit Code:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.permitCode}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Validity Period:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.validityPeriod} days</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Status:</strong></td>
+                                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${receipt.status}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <p style="color: #666; font-size: 14px;">Please keep this receipt for your records.</p>
+                        </div>
+                        
+                        <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px; font-size: 14px; color: #666;">
+                            <p style="margin: 0;">Best regards,<br>Knutsford University SRC Team</p>
+                        </div>
+                        
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+                            <p>This is an automated message, please do not reply to this email.</p>
+                            <p>© ${new Date().getFullYear()} Knutsford University SRC. All rights reserved.</p>
+                        </div>
+                    </body>
+                    </html>
+                `
+            });
+            
             resultDiv.innerHTML = `
                 <div class="alert alert-success">
                     <h4>Permit Created Successfully!</h4>
@@ -305,7 +469,15 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
     if (!query) {
         resultDiv.innerHTML = `
             <div class="alert alert-danger">
-                Please enter a search query
+                Please enter a search query. You can search by:
+                <ul>
+                    <li>Student ID</li>
+                    <li>Student Name</li>
+                    <li>Phone Number</li>
+                    <li>Email</li>
+                    <li>Course</li>
+                    <li>Level</li>
+                </ul>
             </div>
         `;
         return;
@@ -313,37 +485,83 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
     try {
         const results = await ipcRenderer.invoke('search-students', query);
         if (results.length > 0) {
-            let html = '<div class="alert alert-success"><h4>Search Results:</h4><ul>';
+            let html = `
+                <div class="alert alert-success">
+                    <h4>Search Results (${results.length} found)</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Course</th>
+                                    <th>Level</th>
+                                    <th>Amount Paid</th>
+                                    <th>Status</th>
+                                    <th>Permit Code</th>
+                                    <th>Created Date</th>
+                                    <th>Created By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
             results.forEach(student => {
+                const createdDate = new Date(student.created_at).toLocaleDateString();
                 html += `
-                    <li>
-                        <p>Student ID: ${student.student_id}</p>
-                        <p>Name: ${student.name}</p>
-                        <p>Email: ${student.email}</p>
-                        <p>Course: ${student.course}</p>
-                        <p>Level: ${student.level}</p>
-                        <p>Number: ${student.number}</p>
-                        <p>Amount Paid: ${student.amount_paid}</p>
-                        <p>Status: ${student.status}</p>
-                        <p>Validity Period: ${student.validity_period} days</p>
-                        <p><strong>Permit Code:</strong> ${student.original_code ? student.original_code : 'N/A'}</p>
-                        <p><strong>Created by:</strong> ${student.creator ? student.creator : 'Unknown'}</p>
-                    </li>
+                    <tr>
+                        <td>${student.student_id}</td>
+                        <td>${student.name}</td>
+                        <td>${student.number}</td>
+                        <td>${student.email}</td>
+                        <td>${student.course}</td>
+                        <td>${student.level}</td>
+                        <td>GHS ${student.amount_paid}</td>
+                        <td>
+                            <span class="badge ${student.status === 'active' ? 'bg-success' : 
+                                               student.status === 'revoked' ? 'bg-danger' : 
+                                               student.status === 'expired' ? 'bg-warning' : 'bg-secondary'}">
+                                ${student.status}
+                            </span>
+                        </td>
+                        <td>${student.original_code || 'N/A'}</td>
+                        <td>${createdDate}</td>
+                        <td>${student.creator || 'Unknown'}</td>
+                    </tr>
                 `;
             });
-            html += '</ul></div>';
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
             resultDiv.innerHTML = html;
         } else {
             resultDiv.innerHTML = `
                 <div class="alert alert-warning">
-                    No results found
+                    <h4>No Results Found</h4>
+                    <p>No students found matching your search criteria: "${query}"</p>
+                    <p>Try searching with:</p>
+                    <ul>
+                        <li>Student ID</li>
+                        <li>Student Name</li>
+                        <li>Phone Number</li>
+                        <li>Email</li>
+                        <li>Course</li>
+                        <li>Level</li>
+                    </ul>
                 </div>
             `;
         }
     } catch (error) {
         resultDiv.innerHTML = `
             <div class="alert alert-danger">
-                Error searching students: ${error.message}
+                <h4>Error</h4>
+                <p>Error searching students: ${error.message}</p>
             </div>
         `;
     }
@@ -463,18 +681,25 @@ document.getElementById('deleteStudentForm').addEventListener('submit', async (e
     }
 });
 
+// Add failed login attempts tracking
+let failedLoginAttempts = {};
+
 // Login Form Handler
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const resultDiv = document.getElementById('loginResult');
+    const username = document.getElementById('username').value;
     const credentials = {
-        username: document.getElementById('username').value,
+        username: username,
         password: document.getElementById('password').value
     };
 
     try {
         const result = await ipcRenderer.invoke('login', credentials);
         if (result.success) {
+            // Reset failed attempts on successful login
+            failedLoginAttempts[username] = 0;
+            
             resultDiv.innerHTML = `
                 <div class="alert alert-success">
                     Login successful. Role: ${result.role}
@@ -494,11 +719,30 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             // Load dashboard data
             loadDashboard();
         } else {
-            resultDiv.innerHTML = `
-                <div class="alert alert-danger">
-                    Invalid username or password
-                </div>
-            `;
+            // Increment failed attempts
+            failedLoginAttempts[username] = (failedLoginAttempts[username] || 0) + 1;
+            
+            if (failedLoginAttempts[username] >= 2) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> Invalid username or password.
+                        <br><br>
+                        <strong>Multiple failed attempts detected.</strong>
+                        <br>
+                        <a href="#" onclick="document.getElementById('recover-tab').click()" class="alert-link">
+                            Click here to recover your password
+                        </a>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> Invalid username or password.
+                        <br>
+                        <small>Attempt ${failedLoginAttempts[username]} of 2 before password recovery is required.</small>
+                    </div>
+                `;
+            }
         }
     } catch (error) {
         resultDiv.innerHTML = `
@@ -1116,3 +1360,143 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeTheme();
     // ... rest of your existing DOMContentLoaded code ...
 });
+
+// Password Recovery Functionality
+document.getElementById('recoverPasswordForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('recoverEmail').value;
+    const username = document.getElementById('recoverUsername').value;
+    const role = document.getElementById('recoverRole').value;
+    const resultDiv = document.getElementById('recoverResult');
+
+    try {
+        // Validate user exists
+        const userExists = await validateUser(username, email, role);
+        
+        if (userExists) {
+            // Generate a unique recovery token
+            const recoveryToken = generateRecoveryToken();
+            
+            // Store the recovery token with an expiration time (24 hours)
+            await storeRecoveryToken(username, recoveryToken);
+            
+            // Send recovery email
+            await sendRecoveryEmail(email, recoveryToken);
+            
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Recovery instructions have been sent to your email address.
+                    Please check your inbox and follow the instructions to reset your password.
+                </div>
+            `;
+            
+            // Clear the form
+            this.reset();
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> No account found with the provided information.
+                    Please verify your email, username, and role.
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> An error occurred: ${error.message}
+            </div>
+        `;
+    }
+});
+
+// Helper function to validate user
+async function validateUser(username, email, role) {
+    try {
+        const result = await ipcRenderer.invoke('validate-user', { username, email, role });
+        return result.exists;
+    } catch (error) {
+        console.error('Error validating user:', error);
+        throw new Error('Failed to validate user. Please try again later.');
+    }
+}
+
+// Helper function to generate a recovery token
+function generateRecoveryToken() {
+    return Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
+}
+
+// Helper function to store recovery token
+async function storeRecoveryToken(username, token) {
+    try {
+        const result = await ipcRenderer.invoke('store-recovery-token', { username, token });
+        return result.success;
+    } catch (error) {
+        console.error('Error storing recovery token:', error);
+        throw new Error('Failed to store recovery token. Please try again later.');
+    }
+}
+
+// Helper function to send recovery email
+async function sendRecoveryEmail(email, token) {
+    try {
+        const recoveryLink = `${window.location.origin}/reset-password.html?token=${token}`;
+        
+        // Send email through the main process
+        const result = await ipcRenderer.invoke('send-recovery-email', {
+            to: email,
+            subject: 'Knutsford University SRC - Password Reset Request',
+            text: `Dear User,\n\nYou have requested to reset your password for the Knutsford University SRC Permit System. Click the following link to reset your password: ${recoveryLink}\n\nThis link will expire in 24 hours.\n\nIf you did not request this password reset, please ignore this email.\n\nBest regards,\nKnutsford University SRC Team`,
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Password Reset</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <img src="${window.location.origin}/assets/knutsford_logo.png" alt="Knutsford University Logo" style="max-width: 200px; height: auto;">
+                    </div>
+                    
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+                        <h2 style="color: #0d6efd; margin-top: 0;">Password Reset Request</h2>
+                        
+                        <p>Dear User,</p>
+                        
+                        <p>We received a request to reset your password for the Knutsford University SRC Permit System.</p>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${recoveryLink}" style="background-color: #0d6efd; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Reset Password</a>
+                        </div>
+                        
+                        <p>If you did not request this password reset, please ignore this email or contact support if you have concerns.</p>
+                        
+                        <p style="color: #666; font-size: 14px;">This link will expire in 24 hours for security reasons.</p>
+                    </div>
+                    
+                    <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px; font-size: 14px; color: #666;">
+                        <p style="margin: 0;">Best regards,<br>Knutsford University SRC Team</p>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+                        <p>This is an automated message, please do not reply to this email.</p>
+                        <p>© ${new Date().getFullYear()} Knutsford University SRC. All rights reserved.</p>
+                    </div>
+                </body>
+                </html>
+            `
+        });
+
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to send recovery email');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error sending recovery email:', error);
+        throw new Error('Failed to send recovery email. Please try again later.');
+    }
+}
